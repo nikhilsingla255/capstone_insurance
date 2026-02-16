@@ -5,7 +5,7 @@ const claimSchema = new Schema({
     claimNumber: { type: String, required: true, unique: true },
     policyId: { type: Schema.Types.ObjectId, ref: 'Policy', required: true },
     claimAmount: { type: Number, required: true },
-    approvedAmount: { type: Number, required: true },
+    approvedAmount: { type: Number, required: true ,default: 0},
     status: {
       type: String,
       enum: ['SUBMITTED', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'SETTLED'],

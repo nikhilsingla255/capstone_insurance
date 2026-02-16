@@ -13,7 +13,7 @@ router.post(
 router.get(
   "/",
   protect,
-  authorize("UNDERWRITER"),
+  authorize("UNDERWRITER" , "CLAIMS_ADJUSTER"),
   policyController.getPolicies,
 );
 router.get(
@@ -35,7 +35,7 @@ router.delete(
   policyController.deletePolicy,
 );
 router.post(
-  "/:policyId/approve",
+  "/:policyNumber/approve",
   protect,
   authorize("UNDERWRITER"),
   policyController.approvePolicy,

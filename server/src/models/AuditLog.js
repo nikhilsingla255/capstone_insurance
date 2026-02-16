@@ -18,7 +18,7 @@ const auditLogSchema = new Schema(
       required: true
     },
     oldValue: {
-      type: Schema.Types.Mixed,
+      type: Object,
       default: null
     },
     newValue: {

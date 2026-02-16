@@ -15,6 +15,9 @@ const policySchema = new Schema(
         effectiveTo: { type: Date, required: true },
         createdBy: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
         approvedBy: { type: Schema.Types.ObjectId, ref: 'User',  default: null },
+        isDeleted: { type: Boolean, default: false },
+        deletedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+        deletedAt: { type: Date, default: null },
     },
     { timestamps: true }
 );

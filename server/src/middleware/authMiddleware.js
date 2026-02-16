@@ -14,9 +14,8 @@ exports.protect = async (req, res, next) => {
 
     try{
         const verifiedToken = jwt.verify(token,process.env.JWT_SECRET);
-console.log("verifiedtoken",verifiedToken)
         req.user = await User.findById(verifiedToken.id).select("-passwordHash");
-        console.log("reqqq",req.user)
+
         next();
     }catch(e){
         res.status(401).json({message:'Invalid Token'})
