@@ -4,6 +4,8 @@ const app = express();
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 
+// Trust proxy - important for getting correct client IP when behind a proxy
+app.set('trust proxy', 1);
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");

@@ -13,13 +13,13 @@ router.post(
 router.get(
   "/",
   protect,
-  authorize("UNDERWRITER" , "CLAIMS_ADJUSTER"),
+  authorize("UNDERWRITER" , "CLAIMS_ADJUSTER","ADMIN"),
   policyController.getPolicies,
 );
 router.get(
   "/:id",
   protect,
-  authorize("UNDERWRITER"),
+  authorize("UNDERWRITER", "CLAIMS_ADJUSTER", "ADMIN"),
   policyController.getPolicyById,
 );
 router.put(

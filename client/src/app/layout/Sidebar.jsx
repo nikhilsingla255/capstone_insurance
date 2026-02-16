@@ -43,6 +43,10 @@ const Sidebar = () => {
             </Link>
           </div>
         )}
+
+        <Link to="/audit-logs" className="py-2 px-3 rounded hover:bg-blue-100">
+          📋 Audit Logs
+        </Link>
       </nav>
     </div>
   );

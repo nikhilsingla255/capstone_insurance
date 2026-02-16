@@ -15,6 +15,7 @@ import ClaimsList from "../features/claim/ClaimsList";
 import ClaimDetails from "../features/claim/ClaimDetails";
 import UserList from "../features/admin/UserList";
 import CreateUser from "../features/admin/CreateUser";
+import AuditLogPage from "../features/audit-logs/AuditLogPage";
 
 const AppRoutes = () => {
   return (
@@ -38,7 +39,7 @@ const AppRoutes = () => {
       <Route
         path="/policies"
         element={
-          <ProtectedRoute allowedRoles={["UNDERWRITER"]}>
+          <ProtectedRoute allowedRoles={["UNDERWRITER" , "ADMIN" ]}>
             <AppShell>
               <PolicyList />
             </AppShell>
@@ -156,6 +157,17 @@ const AppRoutes = () => {
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AppShell>
               <CreateUser />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/audit-logs"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN", "UNDERWRITER", "CLAIMS_ADJUSTER", "REINSURANCE_ANALYST"]}>
+            <AppShell>
+              <AuditLogPage />
             </AppShell>
           </ProtectedRoute>
         }

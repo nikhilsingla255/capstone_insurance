@@ -1,5 +1,6 @@
 const Treaty = require("../models/Treaty");
 const AuditLog = require("../models/AuditLog");
+const { getClientIp } = require('../utils/getClientIp');
 
 exports.createTreaty = async (req, res) => {
   try {
@@ -15,7 +16,7 @@ exports.createTreaty = async (req, res) => {
       oldValue: null,
       newValue: treaty,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.status(201).json(treaty);
@@ -64,7 +65,7 @@ exports.updateTreaty = async (req, res) => {
       oldValue: oldValue,
       newValue: treaty,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.json(treaty);
@@ -89,7 +90,7 @@ exports.deleteTreaty = async (req, res) => {
       oldValue: treaty,
       newValue: null,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.json({ message: "Treaty deleted successfully" });

@@ -1,6 +1,7 @@
 const Claim = require("../models/Claim");
 const Policy = require("../models/Policy");
 const AuditLog = require("../models/AuditLog");
+const { getClientIp } = require('../utils/getClientIp');
 
 exports.createClaim = async (req, res) => {
   try {
@@ -37,7 +38,7 @@ exports.createClaim = async (req, res) => {
       oldValue: null,
       newValue: claim,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.status(201).json(claim);
@@ -70,7 +71,7 @@ exports.reviewClaim = async (req, res) => {
       oldValue,
       newValue: claim,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.json(claim);
@@ -114,7 +115,7 @@ exports.approveClaim = async (req, res) => {
       oldValue,
       newValue: claim,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.json(claim);
@@ -152,7 +153,7 @@ exports.rejectClaim = async (req, res) => {
       oldValue,
       newValue: claim,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.json(claim);
@@ -184,7 +185,7 @@ exports.settleClaim = async (req, res) => {
       oldValue,
       newValue: claim,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.json(claim);
@@ -215,18 +216,64 @@ exports.getClaimById = async (req, res) => {
 };
 
 exports.updateClaimStatus = async (req, res) => {
-  const { status } = req.body;
-  const claim = await Claim.findByIdAndUpdate(
-    req.params.id,
-    { status },
-    { new: true },
-  );
-  res.json(claim);
+  try {
+    const { status } = req.body;
+    const claim = await Claim.findById(req.params.id);
+    
+    if (!claim) {
+      return res.status(404).json({ message: "Claim not found" });
+    }
+
+    const oldValue = claim.toObject();
+    
+    const updatedClaim = await Claim.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    await AuditLog.create({
+      entityType: "CLAIM",
+      entityId: updatedClaim._id,
+      action: "UPDATE",
+      oldValue,
+      newValue: updatedClaim,
+      performedBy: req.user._id,
+      ipAddress: getClientIp(req)
+    });
+
+    res.json(updatedClaim);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 exports.deleteClaim = async (req, res) => {
-  await Claim.findByIdAndDelete(req.params.id);
-  res.json({ message: "Claim deleted" });
+  try {
+    const claim = await Claim.findById(req.params.id);
+    
+    if (!claim) {
+      return res.status(404).json({ message: "Claim not found" });
+    }
+
+    const oldValue = claim.toObject();
+    
+    await Claim.findByIdAndDelete(req.params.id);
+
+    await AuditLog.create({
+      entityType: "CLAIM",
+      entityId: claim._id,
+      action: "DELETE",
+      oldValue,
+      newValue: null,
+      performedBy: req.user._id,
+      ipAddress: getClientIp(req)
+    });
+
+    res.json({ message: "Claim deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 exports.updateClaimRemarks = async (req, res) => {
@@ -249,7 +296,7 @@ exports.updateClaimRemarks = async (req, res) => {
       oldValue,
       newValue: claim,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.json(claim);

@@ -1,5 +1,6 @@
 const Policy = require("../models/Policy");
 const AuditLog = require('../models/AuditLog');
+const { getClientIp } = require('../utils/getClientIp');
 
 const { reinsuranceEngine } = require('../services/reinsuranceEngine');
 
@@ -18,7 +19,7 @@ exports.createPolicy = async (req, res) => {
       oldValue: null,
       newValue: policy,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
     res.status(201).json(policy);
@@ -53,7 +54,7 @@ exports.updatePolicy = async (req, res) => {
       oldValue: oldValue,
       newValue: policy,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
 
   res.json(policy);
@@ -76,7 +77,7 @@ exports.deletePolicy = async (req, res) => {
     oldValue: policy,
     newValue: null,
     performedBy: req.user._id,
-    ipAddress: req.ip
+    ipAddress: getClientIp(req)
   });
   
   res.json({ message: "Policy deleted" });
@@ -111,7 +112,7 @@ exports.approvePolicy = async (req, res) => {
       oldValue: oldValue,
       newValue: policy,
       performedBy: req.user._id,
-      ipAddress: req.ip
+      ipAddress: getClientIp(req)
     });
     
     const allocation = await reinsuranceEngine(policy, userId);
