@@ -1,4 +1,3 @@
-// Script to create an admin user
 
 require("dotenv").config();
 const mongoose = require("mongoose");

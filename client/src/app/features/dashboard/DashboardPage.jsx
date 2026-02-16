@@ -153,6 +153,46 @@ const DashboardPage = () => {
           </div>
         )}
       </Card>
+
+      {/* REINSURER DISTRIBUTION PIE CHART */}
+      <Card>
+        <h3 className="mb-4 font-semibold">Reinsurer Distribution</h3>
+        {distribution.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              {/* <Pie
+                data={distribution}
+                // dataKey="allocatedAmount"
+                // nameKey="reinsurerName"
+                dataKey="totalCededAmount"
+                nameKey="_id"
+                outerRadius={100}
+                label
+              > */}
+
+              <Pie
+                data={distribution}
+                dataKey="totalCededAmount"
+                nameKey="reinsurerName"
+                outerRadius={100}
+                label={({ name, value, payload }) =>
+                  `${name} - ₹${Number(value).toLocaleString('en-IN')} (${payload.avgCededPercentage || 0}%)`
+                }
+              >
+
+                {distribution.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6'][index % 5]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN')}`} />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="text-center py-12 text-gray-500">
+            No reinsurer distribution data available yet
+          </div>
+        )}
+      </Card>
     </div>
   );
 };

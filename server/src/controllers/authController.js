@@ -8,26 +8,6 @@ const generateToken = (userId, userRole) => {
     );
 }
 
-// exports.register = async (req, res) => {
-//     try {
-//         const { email ,role} = req.body;
-
-//         const exists = await User.exists({ email: email.toLowerCase() });
-//         if (exists) {
-//             return res.status(409).json({ message: 'User with this email already exists' });
-//         }
-
-//         const user = await User.create(req.body);
-//         const token = generateToken(user._id,role);
-
-//         res.status(201).json({
-//             token, user
-//         });
-//     } catch (error) {
-//         res.status(400).json({ message: error.message });
-//     }
-// }
-
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
@@ -47,8 +27,15 @@ exports.login = async (req, res) => {
 
     const token = generateToken(user._id, user.role);
 
+    // Set token in HTTP-only cookie
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
+
     res.json({
-        token,
         user: {
             userId: user._id,
             name: user.username,
@@ -57,5 +44,10 @@ exports.login = async (req, res) => {
             permissions: user.permissions
         }
     })
+}
+
+exports.logout = async (req, res) => {
+    res.clearCookie('token');
+    res.json({ message: 'Logged out successfully' });
 }
 

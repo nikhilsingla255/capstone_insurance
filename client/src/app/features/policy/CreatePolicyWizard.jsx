@@ -99,8 +99,17 @@ const CreatePolicyWizard = () => {
   };
 
   return (
-    <Card>
-      <h1 className="text-xl font-bold mb-6">Create Policy</h1>
+    <div className="space-y-6">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate("/policies")}
+        className="text-blue-600 hover:text-blue-800 font-semibold"
+      >
+        ← Back to Policies
+      </button>
+
+      <Card>
+        <h1 className="text-xl font-bold mb-6">Create Policy</h1>
 
       {step === 1 && (
         <PolicyStepGeneral
@@ -148,6 +157,7 @@ const CreatePolicyWizard = () => {
         </div>
       </div>
     </Card>
+    </div>
   );
 };
 

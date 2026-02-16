@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { getPolicyById } from "./policyService";
 import { getRiskAllocation } from "../reinsurance/reinsuranceService";
 import PolicyStatusBadge from "./PolicyStatusBadge";
@@ -10,6 +10,7 @@ import Card from "../../shared/components/Card";
 const PolicyDetails = () => {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [policy, setPolicy] = useState(null);
   const [allocation, setAllocation] = useState(location.state?.allocation || null);
   const [loading, setLoading] = useState(true);
@@ -46,22 +47,46 @@ const PolicyDetails = () => {
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 p-4 rounded">
-        ❌ {error}
+      <div className="space-y-6">
+        <button
+          onClick={() => navigate("/policies")}
+          className="text-blue-600 hover:text-blue-800 font-semibold"
+        >
+          ← Back to Policies
+        </button>
+        <div className="bg-red-100 border border-red-400 text-red-700 p-4 rounded">
+          ❌ {error}
+        </div>
       </div>
     );
   }
 
   if (!policy) {
     return (
-      <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 p-4 rounded">
-        ⚠️ Policy not found
+      <div className="space-y-6">
+        <button
+          onClick={() => navigate("/policies")}
+          className="text-blue-600 hover:text-blue-800 font-semibold"
+        >
+          ← Back to Policies
+        </button>
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 p-4 rounded">
+          ⚠️ Policy not found
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate("/policies")}
+        className="text-blue-600 hover:text-blue-800 font-semibold"
+      >
+        ← Back to Policies
+      </button>
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>

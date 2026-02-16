@@ -24,6 +24,26 @@ exports.getExposureByLOB = async (req, res) => {
 };
 
 
+// exports.getReinsurerDistribution = async (req, res) => {
+//   try {
+//     const data = await RiskAllocation.aggregate([
+//       { $unwind: "$allocations" },
+//       {
+//         $group: {
+//           _id: "$allocations.reinsurerId",
+//           totalCededAmount: { $sum: "$allocations.allocatedAmount" },
+//           avgCededPercentage: { $avg: "$allocations.allocatedPercentage" }
+//         }
+//       },
+//       { $sort: { totalCededAmount: -1 } }
+//     ]);
+
+//     res.json(data);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+// controllers/dashboardController.js
 exports.getReinsurerDistribution = async (req, res) => {
   try {
     const data = await RiskAllocation.aggregate([
@@ -35,6 +55,27 @@ exports.getReinsurerDistribution = async (req, res) => {
           avgCededPercentage: { $avg: "$allocations.allocatedPercentage" }
         }
       },
+      {
+        $lookup: {
+          from: "reinsurers",
+          localField: "_id",
+          foreignField: "_id",
+          as: "reinsurer"
+        }
+      },
+      { $unwind: { path: "$reinsurer", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 0,
+          reinsurerId: "$_id",
+          reinsurerName: {
+            $ifNull: ["$reinsurer.name", "Unknown Reinsurer"]
+          },
+          totalCededAmount: 1,
+          avgCededPercentage: { $round: ["$avgCededPercentage", 2] }
+        }
+      },
+
       { $sort: { totalCededAmount: -1 } }
     ]);
 

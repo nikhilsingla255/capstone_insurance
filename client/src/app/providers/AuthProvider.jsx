@@ -14,16 +14,21 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const res = await apiClient.post("/auth/login", { email, password });
 
-    const { token, user } = res.data;
-console.log("user autprovider",user)
-    localStorage.setItem("token", token);
+    const { user } = res.data;
+    // Token is sent as HTTP-only cookie automatically
+
     localStorage.setItem("user", JSON.stringify(user));
 
     setUser(user);
     navigate("/dashboard");
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
     localStorage.clear();
     setUser(null);
     navigate("/login");
