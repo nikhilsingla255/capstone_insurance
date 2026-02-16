@@ -13,6 +13,8 @@ import ReinsurerList from "../features/reinsurance/ReinsurerList";
 import RiskAllocationView from "../features/reinsurance/RiskAllocationView";
 import ClaimsList from "../features/claim/ClaimsList";
 import ClaimDetails from "../features/claim/ClaimDetails";
+import UserList from "../features/admin/UserList";
+import CreateUser from "../features/admin/CreateUser";
 
 const AppRoutes = () => {
   return (
@@ -131,6 +133,29 @@ const AppRoutes = () => {
           <ProtectedRoute allowedRoles={["CLAIMS_ADJUSTER", "ADMIN"]}>
             <AppShell>
               <ClaimDetails />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ADMIN MODULE - USER MANAGEMENT */}
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AppShell>
+              <UserList />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/users/create"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AppShell>
+              <CreateUser />
             </AppShell>
           </ProtectedRoute>
         }

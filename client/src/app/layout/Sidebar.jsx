@@ -13,7 +13,7 @@ const Sidebar = () => {
           📊 Dashboard
         </Link>
 
-        {user?.role === "UNDERWRITER" && (
+        {(user?.role === "UNDERWRITER" || user?.role === "ADMIN") && (
           <Link to="/policies" className="py-2 px-3 rounded hover:bg-blue-100">
             📋 Policies
           </Link>
@@ -37,9 +37,11 @@ const Sidebar = () => {
         )}
 
         {user?.role === "ADMIN" && (
-          <Link to="/admin" className="py-2 px-3 rounded hover:bg-blue-100">
-            👥 Admin
-          </Link>
+          <div className="space-y-2">
+            <Link to="/admin/users" className="py-2 px-3 rounded hover:bg-blue-100 block">
+              👥 User Management
+            </Link>
+          </div>
         )}
       </nav>
     </div>
