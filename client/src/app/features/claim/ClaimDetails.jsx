@@ -43,7 +43,7 @@ const ClaimDetails = () => {
 
     loadData();
   }, [id]);
-
+console.log("allocation", allocation);
   const handleStatusChange = (updated) => {
     setClaim(updated);
   };
@@ -84,6 +84,11 @@ const ClaimDetails = () => {
 
   const policy = claim.policyId;
 
+  // Safe numeric helpers to avoid NaN when policy or allocation values are missing
+  const sumInsured = Number(policy?.sumInsured) || 0;
+  const cededTotal = allocation
+    ? allocation.allocations.reduce((sum, a) => sum + (Number(a.allocatedAmount) || 0), 0)
+    : 0;
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -191,20 +196,20 @@ const ClaimDetails = () => {
                   <div className="bg-green-50 p-3 rounded">
                     <p className="text-gray-600 text-xs">Company Retained</p>
                     <p className="text-lg font-bold text-green-600">
-                      ₹{allocation.retainedAmount?.toLocaleString('en-IN')}
+                      ₹{(Number(allocation?.retainedAmount) || 0).toLocaleString('en-IN')}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      ({((allocation.retainedAmount / policy?.sumInsured) * 100).toFixed(2)}%)
+                      ({sumInsured > 0 ? (((Number(allocation?.retainedAmount) || 0) / sumInsured) * 100).toFixed(2) : "0.00"}%)
                     </p>
                   </div>
 
                   <div className="bg-red-50 p-3 rounded">
                     <p className="text-gray-600 text-xs">Ceded to Reinsurers</p>
                     <p className="text-lg font-bold text-red-600">
-                      ₹{allocation.allocations.reduce((sum, a) => sum + a.allocatedAmount, 0).toLocaleString('en-IN')}
+                      ₹{cededTotal.toLocaleString('en-IN')}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      ({((allocation.allocations.reduce((sum, a) => sum + a.allocatedAmount, 0) / policy?.sumInsured) * 100).toFixed(2)}%)
+                      ({sumInsured > 0 ? ((cededTotal / sumInsured) * 100).toFixed(2) : "0.00"}%)
                     </p>
                   </div>
                 </div>
@@ -213,12 +218,20 @@ const ClaimDetails = () => {
                 <div className="border-t pt-3">
                   <p className="font-semibold text-xs mb-2">Reinsurer Breakdown:</p>
                   <div className="space-y-2">
-                    {allocation.allocations.map((alloc, idx) => (
-                      <div key={idx} className="bg-gray-50 p-2 rounded text-xs flex justify-between items-center">
-                        <span>{alloc.reinsurerId?.name || "Unknown Reinsurer"}</span>
-                        <span className="font-semibold">₹{alloc.allocatedAmount?.toLocaleString('en-IN')} ({alloc.allocatedPercentage?.toFixed(2)}%)</span>
-                      </div>
-                    ))}
+                    {allocation.allocations.map((alloc, idx) => {
+                      const amount = Number(alloc.allocatedAmount) || 0;
+                      const pct = typeof alloc.allocatedPercentage === 'number'
+                        ? alloc.allocatedPercentage.toFixed(2)
+                        : sumInsured > 0
+                          ? ((amount / sumInsured) * 100).toFixed(2)
+                          : '0.00';
+
+                      return (
+                        <div key={idx} className="bg-gray-50 p-2 rounded text-xs flex justify-end items-center">
+                          <span className="font-semibold">₹{amount.toLocaleString('en-IN')} ({pct}%)</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
