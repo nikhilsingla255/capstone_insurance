@@ -80,7 +80,6 @@ const ClaimCreateForm = ({ onSuccess, onClose }) => {
     e.preventDefault();
     const newErrors = {};
 
-    // Validations
     if (!formData.claimNumber.trim()) {
       newErrors.claimNumber = "Claim number is required";
     }
