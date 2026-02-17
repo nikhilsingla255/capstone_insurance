@@ -16,7 +16,7 @@ const ClaimsList = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("ALL");
 
-  const canCreate = user?.role === "CLAIMS_ADJUSTER" || user?.role === "ADMIN";
+  const canCreate = user?.role === "CLAIMS_ADJUSTER" ;
 
   const loadClaims = async () => {
     try {

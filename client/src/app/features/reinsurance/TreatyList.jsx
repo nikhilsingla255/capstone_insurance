@@ -17,7 +17,7 @@ const TreatyList = () => {
   const [deleteMessage, setDeleteMessage] = useState(null);
 
   const canCreate =
-    user?.role === "REINSURANCE_ANALYST" || user?.role === "ADMIN";
+    user?.role === "REINSURANCE_ANALYST";
 
   const loadTreaties = async () => {
     try {

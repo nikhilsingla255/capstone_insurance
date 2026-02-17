@@ -4,11 +4,13 @@ import PolicyStatusBadge from "./PolicyStatusBadge";
 import PolicyActions from "./PolicyActions";
 import Loader from "../../shared/components/Loader";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../providers/AuthProvider";
 
 const PolicyList = () => {
   const [policies, setPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const loadPolicies = async () => {
     try {
@@ -32,12 +34,14 @@ const PolicyList = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Policies</h1>
 
-        <button
-          onClick={() => navigate("/policies/create")}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Create Policy
-        </button>
+        {user?.role !== 'ADMIN' && (
+          <button
+            onClick={() => navigate("/policies/create")}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Create Policy
+          </button>
+        )}
       </div>
 
       <div className="overflow-x-auto bg-white shadow rounded-lg">
