@@ -1,8 +1,28 @@
 import apiClient from "../../../app/services/apiClient";
 
+// Define all LOBs
+const ALL_LOBS = ["HEALTH", "MOTOR", "LIFE", "PROPERTY"];
+
+// Normalize exposure data to include all LOBs even if they have no data
+const normalizeExposureData = (data) => {
+  const dataByLOB = {};
+  data.forEach(item => {
+    dataByLOB[item._id] = item;
+  });
+  
+  return ALL_LOBS.map(lob => 
+    dataByLOB[lob] || {
+      _id: lob,
+      totalSumInsured: 0,
+      totalPremium: 0,
+      policyCount: 0
+    }
+  );
+};
+
 export const fetchExposureLOB = async () => {
   const res = await apiClient.get("/dashboard/exposure-lob");
-  return res.data;
+  return normalizeExposureData(res.data);
 };
 
 export const fetchLossRatio = async () => {

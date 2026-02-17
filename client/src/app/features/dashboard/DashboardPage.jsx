@@ -69,7 +69,8 @@ const DashboardPage = () => {
     );
   }
 
-  const hasData = exposure.length > 0 || (lossRatio?.totalPremium > 0);
+  const hasExposureData = exposure.some(item => item.totalSumInsured > 0);
+  const hasData = hasExposureData || (lossRatio?.totalPremium > 0);
 
   return (
     <div className="space-y-6">
@@ -110,20 +111,14 @@ const DashboardPage = () => {
       {/* EXPOSURE BAR CHART */}
       <Card>
         <h3 className="mb-4 font-semibold">Exposure by LOB</h3>
-        {exposure.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={exposure}>
-              <XAxis dataKey="_id" />
-              <YAxis />
-              <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN')}`} />
-              <Bar dataKey="totalSumInsured" fill="#2563eb" />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="text-center py-12 text-gray-500">
-            No exposure data available yet
-          </div>
-        )}
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={exposure}>
+            <XAxis dataKey="_id" />
+            <YAxis />
+            <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN')}`} />
+            <Bar dataKey="totalSumInsured" fill="#2563eb" />
+          </BarChart>
+        </ResponsiveContainer>
       </Card>
 
       {/* RETENTION PIE CHART */}
@@ -160,16 +155,6 @@ const DashboardPage = () => {
         {distribution.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              {/* <Pie
-                data={distribution}
-                // dataKey="allocatedAmount"
-                // nameKey="reinsurerName"
-                dataKey="totalCededAmount"
-                nameKey="_id"
-                outerRadius={100}
-                label
-              > */}
-
               <Pie
                 data={distribution}
                 dataKey="totalCededAmount"
