@@ -13,6 +13,8 @@ const TreatyList = () => {
   const [treaties, setTreaties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [deleteMessage, setDeleteMessage] = useState(null);
 
   const canCreate =
     user?.role === "REINSURANCE_ANALYST" || user?.role === "ADMIN";
@@ -39,17 +41,25 @@ const TreatyList = () => {
   };
 
   const handleDelete = async (treatyId, treatyName) => {
-    if (!window.confirm(`Delete treaty "${treatyName}"?`)) {
-      return;
-    }
+    setDeleteModal({ treatyId, treatyName });
+    setDeleteMessage(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal) return;
 
     try {
-      await deleteTreaty(treatyId);
-      alert("✅ Treaty deleted successfully");
-      loadTreaties();
+      await deleteTreaty(deleteModal.treatyId);
+      setDeleteMessage({ type: "success", text: "Treaty deleted successfully" });
+      setTimeout(() => {
+        setDeleteModal(null);
+        loadTreaties();
+      }, 1500);
     } catch (err) {
-      console.error("Delete failed:", err);
-      alert(`❌ Failed to delete: ${err.response?.data?.message || err.message}`);
+      setDeleteMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to delete treaty",
+      });
     }
   };
 
@@ -235,6 +245,49 @@ const TreatyList = () => {
           onClose={() => setShowCreateModal(false)}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm">
+            {deleteMessage ? (
+              <div className="space-y-4">
+                <div
+                  className={`p-4 rounded-lg text-center ${
+                    deleteMessage.type === "success"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {deleteMessage.type === "success" ? "✅" : "❌"} {deleteMessage.text}
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold mb-4">Delete Treaty?</h2>
+                <p className="text-gray-700 mb-6">
+                  Are you sure you want to delete <strong>"{deleteModal.treatyName}"</strong>? This action
+                  cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDeleteModal(null)}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
@@ -257,7 +310,9 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
   const [submitting, setSubmitting] = useState(false);
   const [reinsurers, setReinsurers] = useState([]);
   const [loadingReinsurers, setLoadingReinsurers] = useState(true);
-  const LOB_OPTIONS = ["HEALTH", "MOTOR" , "LIFE" , "PROPERTY"];
+  const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState(null);
+  const LOB_OPTIONS = ["HEALTH", "MOTOR", "LIFE", "PROPERTY"];
 
   // Load reinsurers on modal open
   useEffect(() => {
@@ -280,6 +335,14 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
       ...prev,
       [name]: value,
     }));
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
+      });
+    }
   };
 
   const handleLOBChange = (lob) => {
@@ -289,35 +352,71 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
         ? prev.applicableLOBs.filter((item) => item !== lob)
         : [...prev.applicableLOBs, lob],
     }));
+    // Clear error for LOBs when user makes changes
+    if (errors.applicableLOBs) {
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated.applicableLOBs;
+        return updated;
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const newErrors = {};
+
+    // Validation
+    if (!formData.treatyName.trim()) {
+      newErrors.treatyName = "Treaty name is required";
+    }
+    if (!formData.reinsurerId) {
+      newErrors.reinsurerId = "Please select a reinsurer";
+    }
+    if (!formData.sharePercentage || formData.sharePercentage <= 0 || formData.sharePercentage > 100) {
+      newErrors.sharePercentage = "Share percentage must be between 1 and 100";
+    }
+    if (!formData.retentionLimit || formData.retentionLimit <= 0) {
+      newErrors.retentionLimit = "Retention limit must be greater than 0";
+    }
+    if (!formData.treatyLimit || formData.treatyLimit <= 0) {
+      newErrors.treatyLimit = "Treaty limit must be greater than 0";
+    }
+    if (formData.applicableLOBs.length === 0) {
+      newErrors.applicableLOBs = "Please select at least one Line of Business";
+    }
+    if (!formData.effectiveFrom) {
+      newErrors.effectiveFrom = "Effective from date is required";
+    }
+    if (!formData.effectiveTo) {
+      newErrors.effectiveTo = "Effective to date is required";
+    }
+    if (
+      formData.effectiveFrom &&
+      formData.effectiveTo &&
+      new Date(formData.effectiveTo) <= new Date(formData.effectiveFrom)
+    ) {
+      newErrors.effectiveTo = "Effective to must be after effective from";
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      if (!formData.treatyName.trim()) {
-        alert("❌ Treaty name is required");
-        return;
-      }
-      if (!formData.reinsurerId) {
-        alert("❌ Please select a reinsurer");
-        return;
-      }
-      if (formData.applicableLOBs.length === 0) {
-        alert("❌ Please select at least one Line of Business");
-        return;
-      }
-      if (new Date(formData.effectiveTo) <= new Date(formData.effectiveFrom)) {
-        alert("❌ Effective To must be after Effective From");
-        return;
-      }
-
       await createTreaty(formData);
-      alert("✅ Treaty created successfully");
-      onSuccess();
+      setSuccessMessage("Treaty created successfully!");
+      setTimeout(() => {
+        onSuccess();
+      }, 1500);
     } catch (err) {
-      alert(`❌ Failed: ${err.response?.data?.message || err.message}`);
+      setErrors({
+        submit: err.response?.data?.message || err.message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -337,6 +436,16 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {successMessage && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+              {successMessage}
+            </div>
+          )}
+          {errors.submit && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {errors.submit}
+            </div>
+          )}
           {/* Row 1: Treaty Name & Type */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -349,8 +458,13 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
                 value={formData.treatyName}
                 onChange={handleInputChange}
                 placeholder="e.g., Health Quota Share"
-                className="w-full border rounded px-3 py-2 text-sm"
+                className={`w-full border rounded px-3 py-2 text-sm ${
+                  errors.treatyName ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.treatyName && (
+                <p className="text-red-600 text-xs mt-1">{errors.treatyName}</p>
+              )}
             </div>
 
             <div>
@@ -361,11 +475,16 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
                 name="treatyType"
                 value={formData.treatyType}
                 onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 text-sm"
+                className={`w-full border rounded px-3 py-2 text-sm ${
+                  errors.treatyType ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               >
                 <option value="QUOTA_SHARE">Quota Share</option>
                 <option value="SURPLUS">Surplus</option>
               </select>
+              {errors.treatyType && (
+                <p className="text-red-600 text-xs mt-1">{errors.treatyType}</p>
+              )}
             </div>
           </div>
 
@@ -377,21 +496,28 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
             {loadingReinsurers ? (
               <div className="text-sm text-gray-500">Loading reinsurers...</div>
             ) : (
-              <select
-                name="reinsurerId"
-                value={formData.reinsurerId}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 text-sm"
-              >
-                <option value="">-- Select Reinsurer --</option>
-                {reinsurers
-                  .filter((r) => r.status === "ACTIVE")
-                  .map((reinsurer) => (
-                    <option key={reinsurer._id} value={reinsurer._id}>
-                      {reinsurer.name} ({reinsurer.code})
-                    </option>
-                  ))}
-              </select>
+              <>
+                <select
+                  name="reinsurerId"
+                  value={formData.reinsurerId}
+                  onChange={handleInputChange}
+                  className={`w-full border rounded px-3 py-2 text-sm ${
+                    errors.reinsurerId ? "border-red-500 bg-red-50" : "border-gray-300"
+                  }`}
+                >
+                  <option value="">-- Select Reinsurer --</option>
+                  {reinsurers
+                    .filter((r) => r.status === "ACTIVE")
+                    .map((reinsurer) => (
+                      <option key={reinsurer._id} value={reinsurer._id}>
+                        {reinsurer.name} ({reinsurer.code})
+                      </option>
+                    ))}
+                </select>
+                {errors.reinsurerId && (
+                  <p className="text-red-600 text-xs mt-1">{errors.reinsurerId}</p>
+                )}
+              </>
             )}
           </div>
 
@@ -408,8 +534,13 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
               placeholder="e.g., 30"
               min="0"
               max="100"
-              className="w-full border rounded px-3 py-2 text-sm"
+              className={`w-full border rounded px-3 py-2 text-sm ${
+                errors.sharePercentage ? "border-red-500 bg-red-50" : "border-gray-300"
+              }`}
             />
+            {errors.sharePercentage && (
+              <p className="text-red-600 text-xs mt-1">{errors.sharePercentage}</p>
+            )}
           </div>
 
           {/* Row 3: Retention & Treaty Limit */}
@@ -424,8 +555,13 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
                 value={formData.retentionLimit}
                 onChange={handleInputChange}
                 placeholder="e.g., 5000000"
-                className="w-full border rounded px-3 py-2 text-sm"
+                className={`w-full border rounded px-3 py-2 text-sm ${
+                  errors.retentionLimit ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.retentionLimit && (
+                <p className="text-red-600 text-xs mt-1">{errors.retentionLimit}</p>
+              )}
             </div>
 
             <div>
@@ -438,15 +574,22 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
                 value={formData.treatyLimit}
                 onChange={handleInputChange}
                 placeholder="e.g., 10000000"
-                className="w-full border rounded px-3 py-2 text-sm"
+                className={`w-full border rounded px-3 py-2 text-sm ${
+                  errors.treatyLimit ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.treatyLimit && (
+                <p className="text-red-600 text-xs mt-1">{errors.treatyLimit}</p>
+              )}
             </div>
           </div>
 
           {/* Row 4: LOB Selection */}
           <div>
             <label className="block text-sm font-medium mb-2">LOBs *</label>
-            <div className="flex gap-4">
+            <div className={`flex gap-4 p-2 rounded ${
+              errors.applicableLOBs ? "bg-red-50 border border-red-500" : ""
+            }`}>
               {LOB_OPTIONS.map((lob) => (
                 <label key={lob} className="flex items-center">
                   <input
@@ -459,6 +602,9 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
                 </label>
               ))}
             </div>
+            {errors.applicableLOBs && (
+              <p className="text-red-600 text-xs mt-1">{errors.applicableLOBs}</p>
+            )}
           </div>
 
           {/* Row 5: Dates */}
@@ -472,8 +618,13 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
                 name="effectiveFrom"
                 value={formData.effectiveFrom}
                 onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 text-sm"
+                className={`w-full border rounded px-3 py-2 text-sm ${
+                  errors.effectiveFrom ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.effectiveFrom && (
+                <p className="text-red-600 text-xs mt-1">{errors.effectiveFrom}</p>
+              )}
             </div>
 
             <div>
@@ -485,8 +636,13 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
                 name="effectiveTo"
                 value={formData.effectiveTo}
                 onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2 text-sm"
+                className={`w-full border rounded px-3 py-2 text-sm ${
+                  errors.effectiveTo ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.effectiveTo && (
+                <p className="text-red-600 text-xs mt-1">{errors.effectiveTo}</p>
+              )}
             </div>
           </div>
 
@@ -497,11 +653,16 @@ const CreateTreatyModal = ({ onSuccess, onClose }) => {
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full border rounded px-3 py-2 text-sm"
+              className={`w-full border rounded px-3 py-2 text-sm ${
+                errors.status ? "border-red-500 bg-red-50" : "border-gray-300"
+              }`}
             >
               <option value="ACTIVE">ACTIVE</option>
               <option value="EXPIRED">EXPIRED</option>
             </select>
+            {errors.status && (
+              <p className="text-red-600 text-xs mt-1">{errors.status}</p>
+            )}
           </div>
 
           {/* Buttons */}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../providers/AuthProvider";
-import { getReinsurers, createReinsurer, deleteReinsurer } from "./reinsurerService";
+import { getReinsurers, createReinsurer, deleteReinsurer, updateReinsurer } from "./reinsurerService";
 import Button from "../../shared/components/Button";
 import Loader from "../../shared/components/Loader";
 import Card from "../../shared/components/Card";
@@ -11,6 +11,8 @@ const ReinsurerList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingReinsurer, setEditingReinsurer] = useState(null);
 
   const canCreate = user?.role === "REINSURANCE_ANALYST";
 
@@ -146,8 +148,8 @@ const ReinsurerList = () => {
                         <Button
                           variant="secondary"
                           onClick={() => {
-                            // TODO: Implement edit
-                            alert("Edit feature coming soon");
+                            setEditingReinsurer(reinsurer);
+                            setShowEditModal(true);
                           }}
                           className="text-xs"
                         >
@@ -191,6 +193,22 @@ const ReinsurerList = () => {
         <CreateReinsurerModal
           onSuccess={handleCreateSuccess}
           onClose={() => setShowCreateModal(false)}
+        />
+      )}
+
+      {/* Edit Reinsurer Modal */}
+      {showEditModal && editingReinsurer && (
+        <EditReinsurerModal
+          reinsurer={editingReinsurer}
+          onSuccess={() => {
+            setShowEditModal(false);
+            setEditingReinsurer(null);
+            loadReinsurers();
+          }}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingReinsurer(null);
+          }}
         />
       )}
     </div>
@@ -398,3 +416,103 @@ const CreateReinsurerModal = ({ onSuccess, onClose }) => {
 };
 
 export default ReinsurerList;
+
+// Edit Reinsurer Modal Component
+const EditReinsurerModal = ({ reinsurer, onSuccess, onClose }) => {
+  const [formData, setFormData] = useState({
+    name: reinsurer.name || "",
+    code: reinsurer.code || "",
+    country: reinsurer.country || "",
+    rating: reinsurer.rating || "AA",
+    contactEmail: reinsurer.contactEmail || "",
+    status: reinsurer.status || "ACTIVE",
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+  const COUNTRIES = ["India", "USA", "UK", "Germany", "Singapore", "Japan", "Australia"];
+  const RATINGS = ["AAA", "AA", "A", "BBB"];
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      // Basic validation
+      if (!formData.name.trim()) throw new Error("Name is required");
+      if (!formData.code.trim()) throw new Error("Code is required");
+      if (!formData.country) throw new Error("Country is required");
+      if (!formData.contactEmail.trim() || !formData.contactEmail.includes("@")) throw new Error("Valid contact email is required");
+
+      await updateReinsurer(reinsurer._id, formData);
+      onSuccess();
+    } catch (err) {
+      // simple inline error handling via alert to match existing style
+      alert(`❌ Failed: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-2xl max-h-96 overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">Edit Reinsurer</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl">✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Reinsurer Name *</label>
+              <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full border rounded px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Code *</label>
+              <input type="text" name="code" value={formData.code} onChange={handleInputChange} className="w-full border rounded px-3 py-2 text-sm uppercase" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Country *</label>
+              <select name="country" value={formData.country} onChange={handleInputChange} className="w-full border rounded px-3 py-2 text-sm">
+                <option value="">-- Select Country --</option>
+                {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Credit Rating *</label>
+              <select name="rating" value={formData.rating} onChange={handleInputChange} className="w-full border rounded px-3 py-2 text-sm">
+                {RATINGS.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Contact Email *</label>
+            <input type="email" name="contactEmail" value={formData.contactEmail} onChange={handleInputChange} className="w-full border rounded px-3 py-2 text-sm" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Status *</label>
+            <select name="status" value={formData.status} onChange={handleInputChange} className="w-full border rounded px-3 py-2 text-sm">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button type="submit" disabled={submitting} className="flex-1 bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 disabled:bg-gray-400 text-sm">✅ Save</button>
+            <button type="button" onClick={onClose} className="flex-1 bg-gray-300 text-gray-800 py-2 rounded font-semibold hover:bg-gray-400 text-sm">✕ Cancel</button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+};

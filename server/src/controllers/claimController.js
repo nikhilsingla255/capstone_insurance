@@ -2,6 +2,7 @@ const Claim = require("../models/Claim");
 const Policy = require("../models/Policy");
 const AuditLog = require("../models/AuditLog");
 const { getClientIp } = require('../utils/getClientIp');
+// const { detectFraudIndicators } = require('../services/claimFraudDetection');
 
 exports.createClaim = async (req, res) => {
   try {
@@ -20,6 +21,14 @@ exports.createClaim = async (req, res) => {
     if (claimAmount > policy.sumInsured) {
       return res.status(400).json({ message: "Claim amount exceeds policy coverage" });
     }
+
+    // Detect fraud indicators
+    // const { fraudIndicators, riskLevel } = await detectFraudIndicators(
+    //   policy,
+    //   claimAmount,
+    //   incidentDate,
+    //   reportedDate
+    // );
 
     const claim = await Claim.create({
       claimNumber,
@@ -41,7 +50,14 @@ exports.createClaim = async (req, res) => {
       ipAddress: getClientIp(req)
     });
 
-    res.status(201).json(claim);
+     res.status(201).json(claim);
+    // res.status(201).json({
+    //   claim,
+    //   fraud: {
+    //     riskLevel,
+    //     indicators: fraudIndicators
+    //   }
+    // });
 
   } catch (error) {
     res.status(400).json({ message: error.message });
